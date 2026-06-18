@@ -11,6 +11,10 @@
     <meta http-equiv="Expires" content="0" />
     <title>Control de Ahorro Energético</title>
     <link rel="stylesheet" href="styles.css?v=3" />
+    <script
+      type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
+    ></script>
   </head>
   <body>
     <main class="page-shell">
@@ -321,6 +325,30 @@
         </div>
       </section>
     </main>
+    </section>
+
+<section class="card model-card">
+  <h2>Vista 3D del Prototipo</h2>
+
+  <model-viewer
+    src="modelo.glb"
+    alt="Modelo 3D"
+    camera-controls
+    auto-rotate
+    shadow-intensity="1"
+    exposure="1"
+    environment-image="neutral"
+    touch-action="pan-y">
+  </model-viewer>
+
+  <p class="card-note">
+    Representación 3D del sistema de ahorro energético implementado.
+  </p>
+</section>
+
+</main>
+
+<script defer src="script.js?v=3"></script>
     <script defer src="script.js?v=3"></script>
   </body>
 </html>
