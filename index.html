@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <title>Control de Ahorro Energético</title>
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=6" />
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
@@ -19,29 +19,26 @@
   <body>
     <main class="page-shell">
       <section class="hero">
-        <div>
-          <span class="eyebrow">Interfaz de control</span>
-          <h1>Control de ahorro: Apagado, Automático y Manual</h1>
-          <p>Gestiona el modo del sistema desde la web o el Arduino.</p>
+        <div class="hero-text">
+          <span class="eyebrow">Panel de Control</span>
+          <h1>Sistema de Eficiencia Energética</h1>
+          <p>
+            Gestiona el comportamiento de los equipos y monitorea el ahorro en
+            tiempo real.
+          </p>
         </div>
         <div class="status-card">
-          <div class="status-item">
-            <span>Modo actual</span>
-            <strong id="currentMode">AUTOMÁTICO</strong>
+          <div class="status-grid">
+            <div class="status-item">
+              <span>Modo actual</span>
+              <strong id="currentMode" class="text-glow">AUTOMÁTICO</strong>
+            </div>
+            <div class="status-item">
+              <span>Conexión Serial</span>
+              <strong id="connectionStatus">DESCONECTADO</strong>
+            </div>
           </div>
-          <div class="status-item">
-            <span>Conexión Arduino</span>
-            <strong id="connectionStatus">DESCONECTADO</strong>
-          </div>
-          <div class="status-item">
-            <span>Ahorro estimado</span>
-            <strong id="savedEnergy">0 kWh</strong>
-          </div>
-          <div class="status-item">
-            <span>Dinero ahorrado</span>
-            <strong id="savedCost">$0.00</strong>
-          </div>
-          <button id="connectBtn" class="connect-button">
+          <button id="connectBtn" class="connect-button primary-btn">
             Conectar Arduino
           </button>
           <p id="connectionError" class="error-note"></p>
@@ -49,301 +46,259 @@
       </section>
 
       <section class="controls-grid">
-        <article class="card control-card">
-          <h2>Selecciona el modo</h2>
+        <article class="card control-card span-full">
+          <h2>Modo de Operación</h2>
           <div class="toggle-row">
             <button id="offBtn" class="mode-button">Apagado</button>
             <button id="autoBtn" class="mode-button active">Automático</button>
             <button id="manualBtn" class="mode-button">Manual</button>
           </div>
-          <p class="card-note">
-            El modo Apagado detiene todo. El modo Automático activa según
-            ocupación y el modo Manual mantiene el sistema encendido.
-          </p>
         </article>
 
-        <article class="card stats-card">
-          <h2>Escenario actual</h2>
-          <div class="input-group">
-            <label for="hours">Horas activas al día</label>
-            <input type="number" id="hours" min="1" max="24" value="12" />
-          </div>
-          <div class="input-group">
-            <label for="autoPercent">Encendido automático</label>
-            <input
-              type="range"
-              id="autoPercent"
-              min="10"
-              max="100"
-              value="40"
-            />
-            <span id="autoPercentValue">40%</span>
-          </div>
-          <div class="input-group">
-            <label for="timeout">Tiempo auto apagado (segundos)</label>
-            <input type="number" id="timeout" min="0" value="10" />
-            <small style="color: #94a3b8; font-size: 0.85rem">0 o mayor</small>
-          </div>
-          <div class="input-group">
-            <label for="price">Precio por kWh</label>
-            <div class="input-inline">
-              <span>$</span>
-              <input
-                type="number"
-                id="price"
-                min="0"
-                step="0.01"
-                value="0.20"
-              />
+        <article class="card stats-card span-full">
+          <h2>Parámetros del Sistema</h2>
+          <div class="params-grid">
+            <div class="input-group">
+              <label for="hours">Horas de clase/día</label>
+              <input type="number" id="hours" min="1" max="24" value="12" />
             </div>
-          </div>
-          <div class="input-group">
-            <label for="salonMultiplier">Multiplicador de salones</label>
-            <input type="number" id="salonMultiplier" min="1" value="1" />
-            <small style="color: #94a3b8; font-size: 0.85rem">
-              Si usas el sistema en varios salones, muestra el ahorro total.
-            </small>
+            <div class="input-group">
+              <label for="autoPercent">% Uso Auto (Teórico)</label>
+              <div class="range-wrapper">
+                <input
+                  type="range"
+                  id="autoPercent"
+                  min="10"
+                  max="100"
+                  value="40"
+                />
+                <span id="autoPercentValue" class="badge">40%</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="timeout">Auto-Apagado (seg)</label>
+              <input type="number" id="timeout" min="0" value="10" />
+            </div>
+            <div class="input-group">
+              <label for="price">Costo kWh ($)</label>
+              <div class="input-inline">
+                <span class="currency">$</span>
+                <input
+                  type="number"
+                  id="price"
+                  min="0"
+                  step="0.01"
+                  value="0.20"
+                />
+              </div>
+            </div>
           </div>
         </article>
       </section>
 
+      <div class="section-divider">
+        <h2 class="section-title neon-blue">Métricas Reales (En Vivo)</h2>
+        <p class="section-subtitle">
+          Datos recolectados directamente por los sensores del Arduino.
+        </p>
+      </div>
+
       <section class="comparison-grid">
         <article class="card summary-card">
           <div class="summary-header">
-            <span>Consumo manual</span>
-            <strong id="manualConsumption">0 kWh</strong>
+            <span>Tiempo Vigilando</span>
+            <strong id="realConnectedTime">0s</strong>
           </div>
-          <p>Todos los equipos encendidos durante el período activo.</p>
+          <p>Tiempo total que el sistema estuvo activo en modo Auto/Manual.</p>
         </article>
 
-        <article class="card summary-card">
+        <article class="card summary-card highlight-card green-glow">
           <div class="summary-header">
-            <span>Consumo automático</span>
-            <strong id="autoConsumption">0 kWh</strong>
+            <span>Ahorro Real</span>
+            <strong id="realSavedCost">$0.00</strong>
           </div>
           <p>
-            Solo enciende cuando hay ocupación real, reduciendo las horas
-            activas.
+            Dinero salvado por tener el sistema apagando cosas (Total:
+            <span id="realSavedKwh" class="text-white">0 kWh</span>).
           </p>
         </article>
 
-        <article class="card summary-card highlight-card">
+        <article class="card summary-card highlight-card red-glow">
           <div class="summary-header">
-            <span>Ahorro estimado</span>
-            <strong id="savingPercent">0%</strong>
+            <span>Gasto Real</span>
+            <strong id="realConsumptionCost">$0.00</strong>
+          </div>
+          <p>
+            Lo que realmente consumieron los equipos encendidos (Total:
+            <span id="realConsumptionKwh" class="text-white">0 kWh</span>).
+          </p>
+        </article>
+      </section>
+
+      <section class="comparison-grid info-grid">
+        <article class="card info-card">
+          <span>❄️ Aire/Equipos ON</span>
+          <strong id="realAireTime">0s</strong>
+        </article>
+        <article class="card info-card">
+          <span>💡 Luces LED ON</span>
+          <strong id="realLuzTime">0s</strong>
+        </article>
+        <article class="card info-card flex-center">
+          <button
+            id="resetOnTimeBtn"
+            class="connect-button compact danger-btn"
+            type="button"
+          >
+            Resetear Contadores
+          </button>
+        </article>
+      </section>
+
+      <div class="section-divider">
+        <h2 class="section-title neon-green">Proyección Teórica</h2>
+        <p class="section-subtitle">
+          Estimación basada en los parámetros y la cantidad de equipos
+          configurados.
+        </p>
+      </div>
+
+      <section class="comparison-grid">
+        <article class="card summary-card">
+          <div class="summary-header">
+            <span>Ahorro proyectado (Día)</span>
+            <strong id="savedCost">$0.00</strong>
           </div>
           <div class="progress-pill">
-            <span class="progress-label">Eficiencia automática</span>
-            <div class="progress-bar">
-              <span id="savingPercentBar"></span>
-            </div>
+            <span class="progress-label">Eficiencia vs Manual</span>
+            <div class="progress-bar"><span id="savingPercentBar"></span></div>
           </div>
-          <p>
-            Comparación del uso de energía del modo automático con respecto a
-            manual.
-          </p>
         </article>
-      </section>
-
-      <section class="comparison-grid">
-        <article class="card summary-card">
-          <div class="summary-header">
-            <span>Costo diario si está siempre encendido</span>
-            <strong id="manualCost">$0.00</strong>
-          </div>
-          <p>Coste de dejar todos los equipos encendidos las horas activas.</p>
-        </article>
-
-        <article class="card summary-card">
-          <div class="summary-header">
-            <span>Ahorro diario con automático</span>
-            <strong id="dailySavings">$0.00</strong>
-          </div>
-          <p>Lo que ahorras al no dejar todo encendido todo el tiempo.</p>
-        </article>
-      </section>
-
-      <section class="comparison-grid">
-        <article class="card summary-card">
-          <div class="summary-header">
-            <span>Consumo total del sistema</span>
-            <strong id="totalWatts">0 W</strong>
-          </div>
-          <p>Potencia simultánea de todos los equipos.</p>
-        </article>
-
         <article class="card summary-card">
           <div class="summary-header">
             <span>Ahorro mensual</span>
             <strong id="monthlySavings">$0.00</strong>
           </div>
-          <p>Estimado a 30 días.</p>
-        </article>
-
-        <article class="card summary-card">
-          <div class="summary-header">
-            <span
-              >Ahorro total en
-              <span id="salonMultiplierLabel">1</span> salones</span
-            >
-            <strong id="totalSalonSavings">$0.00</strong>
-          </div>
-          <p>Es el ahorro si replicas este sistema en todos los salones.</p>
-        </article>
-
-        <article class="card summary-card">
-          <div class="summary-header">
-            <span>Ahorro anual</span>
-            <strong id="yearlySavings">$0.00</strong>
-          </div>
-          <p>Proyección de 365 días.</p>
+          <p>
+            Estimación calculada a 30 días continuos con los parámetros
+            actuales.
+          </p>
         </article>
         <article class="card summary-card">
           <div class="summary-header">
-            <span>Tiempo total encendido</span>
-            <strong id="storedOnHours">0 h</strong>
+            <span>Consumo Auto vs Manual</span>
+            <strong id="autoConsumption" class="text-green">0 kWh</strong>
           </div>
-          <p>Horas acumuladas guardadas automáticamente en este navegador.</p>
-          <div style="margin-top: 0.6rem">
-            <button
-              id="resetOnTimeBtn"
-              class="connect-button compact"
-              type="button"
-            >
-              Reiniciar tiempo
-            </button>
-          </div>
+          <p>
+            Si estuviera siempre prendido gastaría:
+            <span id="manualConsumption" class="text-white">0 kWh</span>
+          </p>
         </article>
       </section>
 
       <section class="details-card card">
-        <h2>Personaliza tu escenario</h2>
-        <p style="margin-bottom: 1.5rem; color: #cbd5e1">
-          Ingresa la cantidad de equipos que tienes para ver un estimado
-          personalizado de ahorro.
-        </p>
-        <div class="equipment-grid">
-          <div class="input-group">
-            <label for="aireCount">Aires acondicionados</label>
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                align-items: center;
-              "
-            >
-              <input
-                type="number"
-                id="aireCount"
-                min="0"
-                value="4"
-                style="flex: 1"
-              />
-              <input
-                type="number"
-                id="airePower"
-                min="0"
-                value="1500"
-                style="width: 110px"
-              />
-              <span style="color: #94a3b8; font-size: 0.9rem">W cada uno</span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="ledCount">Luces LED</label>
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                align-items: center;
-              "
-            >
-              <input
-                type="number"
-                id="ledCount"
-                min="0"
-                value="10"
-                style="flex: 1"
-              />
-              <input
-                type="number"
-                id="ledPower"
-                min="0"
-                value="10"
-                style="width: 110px"
-              />
-              <span style="color: #94a3b8; font-size: 0.9rem">W cada uno</span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="projectorCount">Proyectores</label>
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                align-items: center;
-              "
-            >
-              <input
-                type="number"
-                id="projectorCount"
-                min="0"
-                value="2"
-                style="flex: 1"
-              />
-              <input
-                type="number"
-                id="projectorPower"
-                min="0"
-                value="300"
-                style="width: 110px"
-              />
-              <span style="color: #94a3b8; font-size: 0.9rem">W cada uno</span>
-            </div>
-          </div>
+        <div class="card-header">
+          <h2>Inventario de Equipos</h2>
+          <button
+            id="addEquipmentBtn"
+            class="connect-button compact"
+            type="button"
+          >
+            + Añadir Fila
+          </button>
         </div>
-        <div class="equipment-dynamic-card">
-          <div class="equipment-header">
-            <span>Equipos adicionales por clase</span>
-            <button
-              id="addEquipmentBtn"
-              class="connect-button compact"
-              type="button"
-            >
-              Agregar equipo
-            </button>
+        <p class="section-subtitle mb-4">
+          Los cambios acá afectan instantáneamente el cálculo de plata y
+          consumo.
+        </p>
+
+        <div class="equipment-list-container">
+          <div class="equipment-grid-static">
+            <div class="eq-item">
+              <label>❄️ Aires Acondicionados</label>
+              <div class="eq-inputs">
+                <input
+                  type="number"
+                  id="aireCount"
+                  min="0"
+                  value="1"
+                  placeholder="Cant."
+                />
+                <input
+                  type="number"
+                  id="airePower"
+                  min="0"
+                  value="1500"
+                  placeholder="Watts"
+                />
+                <span>W</span>
+              </div>
+            </div>
+            <div class="eq-item">
+              <label>💡 Luces LED</label>
+              <div class="eq-inputs">
+                <input
+                  type="number"
+                  id="ledCount"
+                  min="0"
+                  value="10"
+                  placeholder="Cant."
+                />
+                <input
+                  type="number"
+                  id="ledPower"
+                  min="0"
+                  value="10"
+                  placeholder="Watts"
+                />
+                <span>W</span>
+              </div>
+            </div>
+            <div class="eq-item">
+              <label>📽️ Proyectores</label>
+              <div class="eq-inputs">
+                <input
+                  type="number"
+                  id="projectorCount"
+                  min="0"
+                  value="1"
+                  placeholder="Cant."
+                />
+                <input
+                  type="number"
+                  id="projectorPower"
+                  min="0"
+                  value="300"
+                  placeholder="Watts"
+                />
+                <span>W</span>
+              </div>
+            </div>
           </div>
-          <div id="equipmentList" class="equipment-list">
-            <p class="card-note">
-              Añade parlantes, ventiladores, PCs u otros equipos. Todos los
-              watts se suman en el cálculo.
-            </p>
-          </div>
+          <div id="equipmentList" class="equipment-list-dynamic"></div>
         </div>
       </section>
-    </section>
 
-<section class="card model-card">
-  <h2>Vista 3D del Prototipo</h2>
+      <div class="section-divider">
+        <h2 class="section-title" style="color: #cbd5e1">Visor 3D</h2>
+      </div>
 
-<model-viewer
-  src="modelo.glb"
-  camera-controls
-  auto-rotate
-  camera-orbit="0deg 75deg 20m">
-</model-viewer>
+      <section class="card model-card">
+        <h2>Vista 3D del Prototipo</h2>
 
-  <p class="card-note">
-    Click derecho para mover el modelo, scroll para acercar/alejar. Click izquierdo para rotar.
-  </p>
-</section>
+        <model-viewer
+          src="./modelo.glb"
+          camera-controls
+          auto-rotate
+          shadow-intensity="1"
+          exposure="1"
+          style="width: 100%; height: 600px"
+        >
+        </model-viewer>
 
-</main>
-
-<script defer src="script.js?v=3"></script>
-    <script defer src="script.js?v=3"></script>
+        <p>Click izquierdo para rotar. Scroll para zoom.</p>
+      </section>
+    </main>
+    <script defer src="script.js?v=6"></script>
   </body>
 </html>
