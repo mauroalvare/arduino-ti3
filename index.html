@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=7" />
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
@@ -80,20 +80,53 @@
               <input type="number" id="timeout" min="0" value="10" />
             </div>
             <div class="input-group">
-              <label for="price">Costo kWh ($)</label>
+              <label for="price">Costo kWh base ($) <span class="label-hint">— usado si no hay tarifa activa</span></label>
               <div class="input-inline">
                 <span class="currency">$</span>
                 <input
                   type="number"
                   id="price"
                   min="0"
-                  step="0.01"
-                  value="0.20"
+                  step="0.001"
+                  value="0.200"
                 />
               </div>
             </div>
           </div>
         </article>
+      </section>
+
+      <!-- SECCIÓN TARIFAS -->
+      <div class="section-divider">
+        <h2 class="section-title" style="color: #f59e0b;">⚡ Tarifas por Horario</h2>
+        <p class="section-subtitle">
+          Define distintos precios según la franja horaria. La hora es de Uruguay (UY). Si no hay ninguna tarifa, se usa el precio base de arriba.
+        </p>
+      </div>
+
+      <section class="card tarifas-card">
+        <div class="card-header">
+          <div>
+            <p id="currentRateDisplay" class="current-rate-display">Calculando hora UY…</p>
+          </div>
+          <button id="addTarifaBtn" class="connect-button compact" type="button">
+            + Añadir Franja
+          </button>
+        </div>
+
+        <div class="tarifa-header-row">
+          <span>Desde</span>
+          <span></span>
+          <span>Hasta</span>
+          <span>$/kWh</span>
+          <span></span>
+        </div>
+
+        <div id="tarifasList" class="tarifas-list"></div>
+
+        <p class="tarifa-note">
+          Las franjas pueden superponerse; se usa la primera que coincida con la hora actual. Los rangos que cruzan medianoche (ej: 22:00 → 06:00) también funcionan.
+        </p>
       </section>
 
       <div class="section-divider">
@@ -299,6 +332,6 @@
         <p>Click izquierdo para rotar. Scroll para zoom.</p>
       </section>
     </main>
-    <script defer src="script.js?v=6"></script>
+    <script defer src="script.js?v=7"></script>
   </body>
 </html>

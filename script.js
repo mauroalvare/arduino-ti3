@@ -33,30 +33,144 @@ let luzIsOn = false;
 let realTimeInterval = null;
 
 // ==== CONTADORES ====
-// sessionSeconds: corre siempre que el modo no sea APAGADO (es la base "si todo estuviera siempre prendido")
-// aireSeconds: solo cuando el aire está ON
-// luzSeconds: solo cuando la luz está ON
 let sessionSeconds = Number(localStorage.getItem("sessionSeconds")) || 0;
 let aireSeconds = Number(localStorage.getItem("aireSeconds")) || 0;
 let luzSeconds = Number(localStorage.getItem("luzSeconds")) || 0;
 
+// ==== TARIFAS POR HORARIO ====
+// Cada tarifa: { from: "HH:MM", to: "HH:MM", rate: number }
+let tarifas = [];
+
+function loadTarifas() {
+  try {
+    const saved = localStorage.getItem("tarifas");
+    if (saved) {
+      tarifas = JSON.parse(saved);
+    }
+  } catch (e) {
+    tarifas = [];
+  }
+  if (tarifas.length === 0) {
+    // Tarifa por defecto usando el precio actual del input
+    tarifas = [];
+  }
+  renderTarifas();
+}
+
+function saveTarifas() {
+  localStorage.setItem("tarifas", JSON.stringify(tarifas));
+}
+
+function getCurrentRate() {
+  // Hora actual en Uruguay (America/Montevideo)
+  const nowStr = new Intl.DateTimeFormat("es-UY", {
+    timeZone: "America/Montevideo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+
+  const [nowH, nowM] = nowStr.split(":").map(Number);
+  const nowMinutes = nowH * 60 + nowM;
+
+  for (const t of tarifas) {
+    const [fH, fM] = t.from.split(":").map(Number);
+    const [tH, tM] = t.to.split(":").map(Number);
+    const fromMin = fH * 60 + fM;
+    const toMin = tH * 60 + tM;
+
+    if (fromMin <= toMin) {
+      // rango normal: 08:00 - 20:00
+      if (nowMinutes >= fromMin && nowMinutes < toMin) return Number(t.rate);
+    } else {
+      // rango que cruza medianoche: 22:00 - 06:00
+      if (nowMinutes >= fromMin || nowMinutes < toMin) return Number(t.rate);
+    }
+  }
+
+  // Si no hay tarifa activa, usar el precio del input
+  return Number(priceInput.value) || 0;
+}
+
+function getEffectiveRate() {
+  if (tarifas.length > 0) return getCurrentRate();
+  return Number(priceInput.value) || 0;
+}
+
+function createTarifaRow(from = "00:00", to = "23:59", rate = 0.20) {
+  const row = document.createElement("div");
+  row.className = "tarifa-item";
+  row.innerHTML = `
+    <input type="time" class="tarifa-from" value="${from}" />
+    <span class="tarifa-sep">→</span>
+    <input type="time" class="tarifa-to" value="${to}" />
+    <input type="number" class="tarifa-rate" min="0" step="0.001" value="${rate}" placeholder="$/kWh" />
+    <button type="button" class="equipment-remove tarifa-remove">×</button>
+  `;
+  row.querySelectorAll("input").forEach((i) => i.addEventListener("input", () => {
+    saveTarifasFromDOM();
+    updateCurrentRateDisplay();
+    updateAllValues();
+  }));
+  row.querySelector(".tarifa-remove").addEventListener("click", () => {
+    row.remove();
+    saveTarifasFromDOM();
+    updateCurrentRateDisplay();
+    updateAllValues();
+  });
+  return row;
+}
+
+function saveTarifasFromDOM() {
+  const rows = document.querySelectorAll(".tarifa-item");
+  tarifas = Array.from(rows).map((row) => ({
+    from: row.querySelector(".tarifa-from").value,
+    to: row.querySelector(".tarifa-to").value,
+    rate: Number(row.querySelector(".tarifa-rate").value) || 0,
+  }));
+  saveTarifas();
+}
+
+function renderTarifas() {
+  const container = document.getElementById("tarifasList");
+  if (!container) return;
+  container.innerHTML = "";
+  for (const t of tarifas) {
+    container.appendChild(createTarifaRow(t.from, t.to, t.rate));
+  }
+  updateCurrentRateDisplay();
+}
+
+function updateCurrentRateDisplay() {
+  const el = document.getElementById("currentRateDisplay");
+  if (!el) return;
+  const nowStr = new Intl.DateTimeFormat("es-UY", {
+    timeZone: "America/Montevideo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+
+  if (tarifas.length === 0) {
+    el.textContent = `Hora UY: ${nowStr} — usando precio del input: $${Number(priceInput.value).toFixed(3)}/kWh`;
+    return;
+  }
+  const rate = getCurrentRate();
+  el.textContent = `Hora UY: ${nowStr} — Tarifa activa: $${rate.toFixed(3)}/kWh`;
+}
+
 // ==== POTENCIAS ====
 function getLuzPowerKw() {
   const count = Number(document.getElementById("ledCount").value) || 0;
-  const power =
-    Number(document.getElementById("ledPower").value) || scenario.ledPower;
+  const power = Number(document.getElementById("ledPower").value) || scenario.ledPower;
   return (count * power) / 1000;
 }
 
 function getAireRestoPowerKw() {
   const aireCount = Number(document.getElementById("aireCount").value) || 0;
-  const projCount =
-    Number(document.getElementById("projectorCount").value) || 0;
-  const airePower =
-    Number(document.getElementById("airePower").value) || scenario.airePower;
-  const projPower =
-    Number(document.getElementById("projectorPower").value) ||
-    scenario.projectorPower;
+  const projCount = Number(document.getElementById("projectorCount").value) || 0;
+  const airePower = Number(document.getElementById("airePower").value) || scenario.airePower;
+  const projPower = Number(document.getElementById("projectorPower").value) || scenario.projectorPower;
 
   const extraPower = Array.from(
     equipmentList.querySelectorAll(".equipment-item"),
@@ -73,6 +187,43 @@ function getTotalPowerKw() {
   return getLuzPowerKw() + getAireRestoPowerKw();
 }
 
+// ==== PERSISTENCIA DE PARÁMETROS ====
+const PERSIST_KEYS = [
+  "hours", "autoPercent", "timeout", "price",
+  "aireCount", "airePower", "ledCount", "ledPower",
+  "projectorCount", "projectorPower",
+];
+
+function saveParams() {
+  PERSIST_KEYS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) localStorage.setItem("param_" + id, el.value);
+  });
+  // Guardar equipos dinámicos
+  const rows = Array.from(equipmentList.querySelectorAll(".equipment-item"));
+  const extras = rows.map((row) => ({
+    name: row.querySelector(".equipment-name").value,
+    count: row.querySelector(".equipment-count").value,
+    power: row.querySelector(".equipment-power").value,
+  }));
+  localStorage.setItem("extraEquipment", JSON.stringify(extras));
+}
+
+function loadParams() {
+  PERSIST_KEYS.forEach((id) => {
+    const saved = localStorage.getItem("param_" + id);
+    const el = document.getElementById(id);
+    if (saved !== null && el) el.value = saved;
+  });
+  // Cargar equipos dinámicos
+  try {
+    const extras = JSON.parse(localStorage.getItem("extraEquipment") || "[]");
+    extras.forEach((e) => createEquipmentRow(e.name, e.count, e.power));
+  } catch (e) {
+    createEquipmentRow("PC Escritorio", 1, 250);
+  }
+}
+
 // ==== EQUIPOS DINÁMICOS ====
 function createEquipmentRow(name = "", count = 1, power = 0) {
   const row = document.createElement("div");
@@ -83,11 +234,13 @@ function createEquipmentRow(name = "", count = 1, power = 0) {
     <input type="number" min="0" class="equipment-power" value="${power}" placeholder="Watts" />
     <button type="button" class="equipment-remove">×</button>
   `;
-  row
-    .querySelectorAll("input")
-    .forEach((i) => i.addEventListener("input", updateAllValues));
+  row.querySelectorAll("input").forEach((i) => i.addEventListener("input", () => {
+    saveParams();
+    updateAllValues();
+  }));
   row.querySelector(".equipment-remove").addEventListener("click", () => {
     row.remove();
+    saveParams();
     updateAllValues();
   });
   equipmentList.appendChild(row);
@@ -117,7 +270,7 @@ function updateAllValues() {
 function updateEstimates() {
   const hours = Number(hoursInput.value);
   const autoPct = Number(autoPercentInput.value) / 100;
-  const price = Number(priceInput.value);
+  const price = getEffectiveRate();
   const totalKw = getTotalPowerKw();
 
   const manualKwh = totalKw * hours;
@@ -140,15 +293,10 @@ function startRealTimeTracking() {
   if (realTimeInterval) return;
 
   realTimeInterval = setInterval(() => {
-    // NUEVO: Si no hay puerto conectado, salimos y no contamos nada
     if (!port) return;
-
-    // Si está conectado pero apagado, tampoco contamos
     if (mode === "APAGADO") return;
 
-    // La sesión siempre avanza (base comparación manual)
     sessionSeconds++;
-
     if (aireIsOn) aireSeconds++;
     if (luzIsOn) luzSeconds++;
 
@@ -161,40 +309,29 @@ function startRealTimeTracking() {
 }
 
 function updateRealTimeStatsUI() {
-  const price = Number(priceInput.value);
+  const price = getEffectiveRate();
   const luzKw = getLuzPowerKw();
   const aireKw = getAireRestoPowerKw();
   const totalKw = luzKw + aireKw;
 
-  // Lo que realmente consumieron los equipos
   const realKwhAire = aireKw * (aireSeconds / 3600);
   const realKwhLuz = luzKw * (luzSeconds / 3600);
   const realKwhTotal = realKwhAire + realKwhLuz;
   const realCost = realKwhTotal * price;
 
-  // Lo que hubiera consumido si todo estuviera siempre prendido
   const manualKwh = totalKw * (sessionSeconds / 3600);
-
-  // Ahorro = diferencia entre consumo manual y consumo real
   const savedKwh = Math.max(manualKwh - realKwhTotal, 0);
   const savedCostVal = savedKwh * price;
 
-  document.getElementById("realConnectedTime").textContent =
-    formatDuration(sessionSeconds);
-  document.getElementById("realAireTime").textContent =
-    formatDuration(aireSeconds);
-  document.getElementById("realLuzTime").textContent =
-    formatDuration(luzSeconds);
+  document.getElementById("realConnectedTime").textContent = formatDuration(sessionSeconds);
+  document.getElementById("realAireTime").textContent = formatDuration(aireSeconds);
+  document.getElementById("realLuzTime").textContent = formatDuration(luzSeconds);
 
-  document.getElementById("realConsumptionKwh").textContent =
-    `${formatNumber(realKwhTotal, 4)} kWh`;
-  document.getElementById("realConsumptionCost").textContent =
-    `$${formatNumber(realCost, 2)}`;
+  document.getElementById("realConsumptionKwh").textContent = `${formatNumber(realKwhTotal, 4)} kWh`;
+  document.getElementById("realConsumptionCost").textContent = `$${formatNumber(realCost, 2)}`;
 
-  document.getElementById("realSavedKwh").textContent =
-    `${formatNumber(savedKwh, 4)} kWh`;
-  document.getElementById("realSavedCost").textContent =
-    `$${formatNumber(savedCostVal, 2)}`;
+  document.getElementById("realSavedKwh").textContent = `${formatNumber(savedKwh, 4)} kWh`;
+  document.getElementById("realSavedCost").textContent = `$${formatNumber(savedCostVal, 2)}`;
 }
 
 function resetRealTimeStats() {
@@ -232,7 +369,6 @@ async function connectArduino() {
     isDisconnecting = false;
     writeQueue = Promise.resolve();
 
-    // Resetear estado hasta recibir confirmación del Arduino
     aireIsOn = false;
     luzIsOn = false;
     updateRealTimeStatsUI();
@@ -259,27 +395,17 @@ async function disconnectArduino() {
   } catch (e) {}
 
   if (reader) {
-    try {
-      await reader.cancel();
-    } catch (e) {}
-    try {
-      reader.releaseLock();
-    } catch (e) {}
+    try { await reader.cancel(); } catch (e) {}
+    try { reader.releaseLock(); } catch (e) {}
     reader = null;
   }
   if (writer) {
-    try {
-      await writer.close();
-    } catch (e) {}
-    try {
-      writer.releaseLock();
-    } catch (e) {}
+    try { await writer.close(); } catch (e) {}
+    try { writer.releaseLock(); } catch (e) {}
     writer = null;
   }
   if (port) {
-    try {
-      await port.close();
-    } catch (e) {}
+    try { await port.close(); } catch (e) {}
     port = null;
   }
 
@@ -314,9 +440,7 @@ async function listenSerial() {
           });
         }
       } finally {
-        try {
-          reader.releaseLock();
-        } catch (e) {}
+        try { reader.releaseLock(); } catch (e) {}
         reader = null;
       }
     } catch (err) {
@@ -347,7 +471,6 @@ function handleSerialMessage(message) {
     luzIsOn = message.split(":")[1].trim() === "ON";
   }
 
-  // STATE solo se usa en MANUAL/APAGADO, en AUTO se confía en AIRE/LUZ
   if (message.startsWith("STATE:") && mode !== "AUTOMÁTICO") {
     const state = message.split(":")[1].trim() === "ON";
     aireIsOn = state;
@@ -386,6 +509,10 @@ function sendModeAndTimeout() {
 
 // ==== INIT ====
 document.addEventListener("DOMContentLoaded", () => {
+  // Cargar parámetros persistidos ANTES de cualquier render
+  loadParams();
+  loadTarifas();
+
   offBtn.addEventListener("click", () => setModeFromArduino("APAGADO"));
   manualBtn.addEventListener("click", () => setModeFromArduino("MANUAL"));
   autoBtn.addEventListener("click", () => setModeFromArduino("AUTOMÁTICO"));
@@ -400,30 +527,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document
-    .getElementById("resetOnTimeBtn")
-    .addEventListener("click", resetRealTimeStats);
-  addEquipmentBtn.addEventListener("click", () => createEquipmentRow());
+  document.getElementById("resetOnTimeBtn").addEventListener("click", resetRealTimeStats);
+  addEquipmentBtn.addEventListener("click", () => {
+    createEquipmentRow();
+    saveParams();
+  });
 
-  [
-    "hours",
-    "autoPercent",
-    "timeout",
-    "price",
-    "aireCount",
-    "ledCount",
-    "projectorCount",
-    "airePower",
-    "ledPower",
-    "projectorPower",
-  ].forEach((id) =>
+  document.getElementById("addTarifaBtn").addEventListener("click", () => {
+    const container = document.getElementById("tarifasList");
+    container.appendChild(createTarifaRow("00:00", "23:59", Number(priceInput.value) || 0.20));
+    saveTarifasFromDOM();
+    updateCurrentRateDisplay();
+    updateAllValues();
+  });
+
+  PERSIST_KEYS.forEach((id) =>
     document.getElementById(id).addEventListener("input", () => {
       if (id === "timeout") sendModeAndTimeout();
+      saveParams();
+      updateCurrentRateDisplay();
       updateAllValues();
     }),
   );
 
-  createEquipmentRow("PC Escritorio", 1, 250);
+  // Actualizar display de tarifa cada minuto (por si cambia la franja horaria)
+  setInterval(() => {
+    updateCurrentRateDisplay();
+    updateAllValues();
+  }, 60000);
 
   updateAllValues();
   updateRealTimeStatsUI();

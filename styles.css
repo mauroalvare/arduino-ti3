@@ -543,3 +543,98 @@ input[type="range"] {
 .equipment-item input::placeholder {
   color: #94a3b8; /* Gris clarito para que no resalte tanto como el texto real */
 }
+
+/* ================= TARIFAS POR HORARIO ================= */
+.tarifas-card {
+  gap: 12px;
+}
+
+.current-rate-display {
+  font-size: 0.95rem;
+  color: #f59e0b;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tarifa-header-row {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr 1fr 42px;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tarifas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tarifa-item {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr 1fr 42px;
+  gap: 8px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+}
+
+.tarifa-sep {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.tarifa-item input[type="time"],
+.tarifa-item input[type="number"] {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 100%;
+  transition: border-color 0.3s;
+}
+
+.tarifa-item input[type="time"]:focus,
+.tarifa-item input[type="number"]:focus {
+  outline: none;
+  border-color: #f59e0b;
+}
+
+.tarifa-item input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.4);
+  cursor: pointer;
+}
+
+.tarifa-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.label-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+@media (max-width: 600px) {
+  .tarifa-item {
+    grid-template-columns: 1fr 16px 1fr 80px 36px;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .tarifa-header-row {
+    grid-template-columns: 1fr 16px 1fr 80px 36px;
+    gap: 6px;
+  }
+}
